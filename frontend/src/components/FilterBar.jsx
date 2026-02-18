@@ -5,6 +5,13 @@ const CATEGORIES = ['billing', 'technical', 'account', 'general']
 const PRIORITIES = ['low', 'medium', 'high', 'critical']
 const STATUSES = ['open', 'in_progress', 'resolved', 'closed']
 
+const STATUS_LABELS = {
+    open: 'Open',
+    in_progress: 'In Progress',
+    resolved: 'Resolved',
+    closed: 'Closed',
+}
+
 function FilterBar({ filters, onFilterChange }) {
     const [searchInput, setSearchInput] = useState(filters.search || '')
     const [searchTimeout, setSearchTimeout] = useState(null)
@@ -16,8 +23,6 @@ function FilterBar({ filters, onFilterChange }) {
     const handleSearchChange = (e) => {
         const value = e.target.value
         setSearchInput(value)
-
-        // Debounce search — 300ms
         if (searchTimeout) clearTimeout(searchTimeout)
         const timeout = setTimeout(() => {
             onFilterChange({ ...filters, search: value })
@@ -38,7 +43,7 @@ function FilterBar({ filters, onFilterChange }) {
                 <span className="filter-bar__search-icon">🔍</span>
                 <input
                     type="text"
-                    placeholder="Search tickets by title or description..."
+                    placeholder="Search by title or description..."
                     value={searchInput}
                     onChange={handleSearchChange}
                     className="filter-bar__search-input"
@@ -53,9 +58,7 @@ function FilterBar({ filters, onFilterChange }) {
                 >
                     <option value="">All Categories</option>
                     {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                        </option>
+                        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
                     ))}
                 </select>
 
@@ -66,9 +69,7 @@ function FilterBar({ filters, onFilterChange }) {
                 >
                     <option value="">All Priorities</option>
                     {PRIORITIES.map((pri) => (
-                        <option key={pri} value={pri}>
-                            {pri.charAt(0).toUpperCase() + pri.slice(1)}
-                        </option>
+                        <option key={pri} value={pri}>{pri.charAt(0).toUpperCase() + pri.slice(1)}</option>
                     ))}
                 </select>
 
@@ -79,16 +80,12 @@ function FilterBar({ filters, onFilterChange }) {
                 >
                     <option value="">All Statuses</option>
                     {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                            {s === 'in_progress' ? 'In Progress' : s.charAt(0).toUpperCase() + s.slice(1)}
-                        </option>
+                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                     ))}
                 </select>
 
                 {hasActiveFilters && (
-                    <button onClick={clearFilters} className="filter-bar__clear" title="Clear all filters">
-                        ✕ Clear
-                    </button>
+                    <button onClick={clearFilters} className="filter-bar__clear">✕ Clear</button>
                 )}
             </div>
         </div>
