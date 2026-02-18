@@ -1,3 +1,5 @@
+from django.db.models import Count, Q, Min
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,16 +14,94 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     POST   /api/tickets/         → Create a new ticket (returns 201)
     GET    /api/tickets/         → List all tickets, newest first
-    PATCH  /api/tickets/<id>/    → Update a ticket
+                                   Supports ?category=, ?priority=, ?status=, ?search=
+                                   All filters can be combined.
+    PATCH  /api/tickets/<id>/    → Update a ticket (e.g. change status, override category/priority)
+    GET    /api/tickets/stats/   → Aggregated statistics (DB-level)
     """
     serializer_class = TicketSerializer
     http_method_names = ['get', 'post', 'patch', 'head', 'options']
 
     def get_queryset(self):
-        return Ticket.objects.all().order_by('-created_at')
+        """
+        Returns tickets ordered newest first.
+        Supports filtering by category, priority, status, and search (title + description).
+        All filters can be combined.
+        """
+        queryset = Ticket.objects.all().order_by('-created_at')
+
+        category = self.request.query_params.get('category')
+        priority = self.request.query_params.get('priority')
+        ticket_status = self.request.query_params.get('status')
+        search = self.request.query_params.get('search')
+
+        if category:
+            queryset = queryset.filter(category=category)
+        if priority:
+            queryset = queryset.filter(priority=priority)
+        if ticket_status:
+            queryset = queryset.filter(status=ticket_status)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(description__icontains=search)
+            )
+
+        return queryset
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Return aggregated statistics using DB-level aggregation.
+        Uses Django ORM aggregate() with Count + filter — NO Python-level loops.
+
+        avg_tickets_per_day: hybrid approach (DB aggregation + minimal Python division).
+        This is acceptable — pure DB-level division using ExpressionWrapper is fragile.
+        """
+        stats = Ticket.objects.aggregate(
+            total_tickets=Count('id'),
+            open_tickets=Count('id', filter=Q(status='open')),
+            earliest=Min('created_at'),
+            # Priority breakdown — DB-level aggregation, NO Python loops
+            priority_low=Count('id', filter=Q(priority='low')),
+            priority_medium=Count('id', filter=Q(priority='medium')),
+            priority_high=Count('id', filter=Q(priority='high')),
+            priority_critical=Count('id', filter=Q(priority='critical')),
+            # Category breakdown — DB-level aggregation, NO Python loops
+            category_billing=Count('id', filter=Q(category='billing')),
+            category_technical=Count('id', filter=Q(category='technical')),
+            category_account=Count('id', filter=Q(category='account')),
+            category_general=Count('id', filter=Q(category='general')),
+        )
+
+        # avg_tickets_per_day: hybrid (DB aggregation + minimal Python division)
+        total = stats['total_tickets']
+        earliest = stats['earliest']
+        if earliest:
+            days = max((timezone.now() - earliest).days, 1)
+            avg_per_day = round(total / days, 1)
+        else:
+            avg_per_day = 0
+
+        return Response({
+            'total_tickets': total,
+            'open_tickets': stats['open_tickets'],
+            'avg_tickets_per_day': avg_per_day,
+            'priority_breakdown': {
+                'low': stats['priority_low'],
+                'medium': stats['priority_medium'],
+                'high': stats['priority_high'],
+                'critical': stats['priority_critical'],
+            },
+            'category_breakdown': {
+                'billing': stats['category_billing'],
+                'technical': stats['category_technical'],
+                'account': stats['category_account'],
+                'general': stats['category_general'],
+            },
+        })
