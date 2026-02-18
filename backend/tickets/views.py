@@ -5,19 +5,20 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Ticket
-from .serializers import TicketSerializer
+from .serializers import TicketSerializer, ClassifySerializer
+from .llm_service import classify_ticket
 
 
 class TicketViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Ticket CRUD operations.
 
-    POST   /api/tickets/         → Create a new ticket (returns 201)
-    GET    /api/tickets/         → List all tickets, newest first
-                                   Supports ?category=, ?priority=, ?status=, ?search=
-                                   All filters can be combined.
-    PATCH  /api/tickets/<id>/    → Update a ticket (e.g. change status, override category/priority)
-    GET    /api/tickets/stats/   → Aggregated statistics (DB-level)
+    POST   /api/tickets/           → Create a new ticket (returns 201)
+    GET    /api/tickets/           → List all tickets, newest first
+                                     Supports ?category=, ?priority=, ?status=, ?search=
+    PATCH  /api/tickets/<id>/      → Update a ticket
+    GET    /api/tickets/stats/     → Aggregated statistics (DB-level)
+    POST   /api/tickets/classify/  → LLM-suggested category + priority
     """
     serializer_class = TicketSerializer
     http_method_names = ['get', 'post', 'patch', 'head', 'options']
@@ -105,3 +106,21 @@ class TicketViewSet(viewsets.ModelViewSet):
                 'general': stats['category_general'],
             },
         })
+
+    @action(detail=False, methods=['post'])
+    def classify(self, request):
+        """
+        Send a description, get back LLM-suggested category + priority.
+        Validates input before calling LLM — rejects empty/short descriptions.
+        Returns 503 if LLM is unavailable or returns garbage.
+        """
+        serializer = ClassifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        result = classify_ticket(serializer.validated_data['description'])
+        if result is None:
+            return Response(
+                {'error': 'Classification unavailable. Please select category and priority manually.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        return Response(result)
