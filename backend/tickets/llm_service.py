@@ -77,7 +77,7 @@ def classify_ticket(description):
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
 
         prompt = CLASSIFICATION_PROMPT.format(description=description)
         response = model.generate_content(prompt)

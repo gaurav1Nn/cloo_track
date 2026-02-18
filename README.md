@@ -9,7 +9,7 @@ A full-stack support ticket system with AI-powered classification. Users submit 
 | Backend | Django 5.1 + Django REST Framework |
 | Database | PostgreSQL 15 |
 | Frontend | React 18 + Vite |
-| LLM | Google Gemini 2.0 Flash |
+| LLM | Google Gemini 2.5 Flash |
 | Infrastructure | Docker + Docker Compose + Nginx |
 
 ## Quick Start
