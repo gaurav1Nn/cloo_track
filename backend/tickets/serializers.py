@@ -9,6 +9,9 @@ class TicketSerializer(serializers.ModelSerializer):
     on both POST and PATCH (e.g., {"status": "banana"} → 400).
     """
 
+    category = serializers.CharField(required=False, allow_blank=True, default='')
+    priority = serializers.CharField(required=False, allow_blank=True, default='')
+
     class Meta:
         model = Ticket
         fields = ['id', 'title', 'description', 'category', 'priority', 'status', 'created_at']

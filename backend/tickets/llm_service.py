@@ -77,7 +77,7 @@ def classify_ticket(description):
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
+        model = genai.GenerativeModel('gemini-2.5-flash')
 
         prompt = CLASSIFICATION_PROMPT.format(description=description)
         response = model.generate_content(prompt)
@@ -93,6 +93,6 @@ def classify_ticket(description):
             logger.warning("LLM returned empty response")
 
     except Exception as e:
-        logger.error(f"LLM classification failed: {e}")
+        logger.error(f"LLM classification failed: {type(e).__name__}: {e}")
 
     return None

@@ -52,6 +52,28 @@ class TicketViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        category = data.get('category', '').strip()
+        priority = data.get('priority', '').strip()
+
+        # Auto-classify via LLM if category or priority not provided
+        if not category or not priority:
+            description = data.get('description', '')
+            if len(description) >= 10:
+                result = classify_ticket(description)
+                if result:
+                    if not category:
+                        data['category'] = result.get('suggested_category', 'general')
+                    if not priority:
+                        data['priority'] = result.get('suggested_priority', 'medium')
+
+            # Fallback defaults if LLM fails or description too short
+            if not data.get('category') or data['category'] == '':
+                data['category'] = 'general'
+            if not data.get('priority') or data['priority'] == '':
+                data['priority'] = 'medium'
+
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
