@@ -16,6 +16,7 @@ function TicketList({ refreshTrigger, onTicketUpdate }) {
     const [filters, setFilters] = useState({ category: '', priority: '', status: '', search: '' })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [expandedId, setExpandedId] = useState(null)
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -35,6 +36,10 @@ function TicketList({ refreshTrigger, onTicketUpdate }) {
             load()
             onTicketUpdate()
         } catch { /* skip */ }
+    }
+
+    const toggleExpand = (id) => {
+        setExpandedId(expandedId === id ? null : id)
     }
 
     const fmt = (d) => {
@@ -71,28 +76,44 @@ function TicketList({ refreshTrigger, onTicketUpdate }) {
                     </thead>
                     <tbody>
                         {tickets.map((t) => (
-                            <tr key={t.id}>
-                                <td className="tl-id">#T-{String(t.id).padStart(4, '0')}</td>
-                                <td className="tl-subj">{t.title}</td>
-                                <td className="tl-cat">{t.category}</td>
-                                <td>
-                                    <select
-                                        className={`tl-badge tl-badge--${t.status}`}
-                                        value={t.status}
-                                        onChange={(e) => changeStatus(t.id, e.target.value)}
-                                    >
-                                        {STATUS_OPTIONS.map((s) => (
-                                            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                                        ))}
-                                    </select>
-                                </td>
-                                <td>
-                                    <span className={`tl-badge tl-badge--pri-${t.priority}`}>
-                                        {t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}
-                                    </span>
-                                </td>
-                                <td className="tl-date">{fmt(t.created_at)}</td>
-                            </tr>
+                            <>
+                                <tr key={t.id} className={`tl-row ${expandedId === t.id ? 'tl-row--expanded' : ''}`} onClick={() => toggleExpand(t.id)}>
+                                    <td className="tl-id">#T-{String(t.id).padStart(4, '0')}</td>
+                                    <td className="tl-subj">
+                                        <div className="tl-subj__title">{t.title}</div>
+                                        <div className="tl-subj__desc">{t.description.length > 80 ? t.description.slice(0, 80) + '…' : t.description}</div>
+                                    </td>
+                                    <td className="tl-cat">{t.category}</td>
+                                    <td>
+                                        <select
+                                            className={`tl-badge tl-badge--${t.status}`}
+                                            value={t.status}
+                                            onChange={(e) => { e.stopPropagation(); changeStatus(t.id, e.target.value) }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {STATUS_OPTIONS.map((s) => (
+                                                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <span className={`tl-badge tl-badge--pri-${t.priority}`}>
+                                            {t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}
+                                        </span>
+                                    </td>
+                                    <td className="tl-date">{fmt(t.created_at)}</td>
+                                </tr>
+                                {expandedId === t.id && (
+                                    <tr key={`${t.id}-desc`} className="tl-expand-row">
+                                        <td colSpan={6}>
+                                            <div className="tl-expand">
+                                                <div className="tl-expand__label">Full Description</div>
+                                                <div className="tl-expand__text">{t.description}</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </>
                         ))}
                     </tbody>
                 </table>
