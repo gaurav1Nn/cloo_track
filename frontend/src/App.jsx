@@ -13,7 +13,6 @@ function App() {
 
     return (
         <div className="app-layout">
-            {/* Sidebar */}
             <aside className="sidebar">
                 <div className="sidebar__logo">
                     <span className="sidebar__logo-icon">🎫</span>
@@ -38,7 +37,6 @@ function App() {
                 </nav>
             </aside>
 
-            {/* Main */}
             <main className="main-content">
                 <div className="page-toolbar">
                     <h1 className="page-title">
@@ -60,7 +58,6 @@ function App() {
                 </div>
             </main>
 
-            {/* Modal */}
             {modal && (
                 <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModal(false) }}>
                     <div className="modal-box">

@@ -10,25 +10,10 @@ from .llm_service import classify_ticket
 
 
 class TicketViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Ticket CRUD operations.
-
-    POST   /api/tickets/           → Create a new ticket (returns 201)
-    GET    /api/tickets/           → List all tickets, newest first
-                                     Supports ?category=, ?priority=, ?status=, ?search=
-    PATCH  /api/tickets/<id>/      → Update a ticket
-    GET    /api/tickets/stats/     → Aggregated statistics (DB-level)
-    POST   /api/tickets/classify/  → LLM-suggested category + priority
-    """
     serializer_class = TicketSerializer
     http_method_names = ['get', 'post', 'patch', 'head', 'options']
 
     def get_queryset(self):
-        """
-        Returns tickets ordered newest first.
-        Supports filtering by category, priority, status, and search (title + description).
-        All filters can be combined.
-        """
         queryset = Ticket.objects.all().order_by('-created_at')
 
         category = self.request.query_params.get('category')
@@ -57,7 +42,6 @@ class TicketViewSet(viewsets.ModelViewSet):
         category = data.get('category', '').strip()
         priority = data.get('priority', '').strip()
 
-        # Auto-classify via LLM if category or priority not provided
         if not category or not priority:
             description = data.get('description', '')
             if len(description) >= 10:
@@ -68,7 +52,6 @@ class TicketViewSet(viewsets.ModelViewSet):
                     if not priority:
                         data['priority'] = result.get('suggested_priority', 'medium')
 
-            # Fallback defaults if LLM fails or description too short
             if not data.get('category') or data['category'] == '':
                 data['category'] = 'general'
             if not data.get('priority') or data['priority'] == '':
@@ -79,32 +62,22 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """
-        Return aggregated statistics using DB-level aggregation.
-        Uses Django ORM aggregate() with Count + filter — NO Python-level loops.
-
-        avg_tickets_per_day: hybrid approach (DB aggregation + minimal Python division).
-        This is acceptable — pure DB-level division using ExpressionWrapper is fragile.
-        """
         stats = Ticket.objects.aggregate(
             total_tickets=Count('id'),
             open_tickets=Count('id', filter=Q(status='open')),
             in_progress_tickets=Count('id', filter=Q(status='in_progress')),
             resolved_tickets=Count('id', filter=Q(status='resolved')),
             earliest=Min('created_at'),
-            # Priority breakdown — DB-level aggregation, NO Python loops
             priority_low=Count('id', filter=Q(priority='low')),
             priority_medium=Count('id', filter=Q(priority='medium')),
             priority_high=Count('id', filter=Q(priority='high')),
             priority_critical=Count('id', filter=Q(priority='critical')),
-            # Category breakdown — DB-level aggregation, NO Python loops
             category_billing=Count('id', filter=Q(category='billing')),
             category_technical=Count('id', filter=Q(category='technical')),
             category_account=Count('id', filter=Q(category='account')),
             category_general=Count('id', filter=Q(category='general')),
         )
 
-        # avg_tickets_per_day: hybrid (DB aggregation + minimal Python division)
         total = stats['total_tickets']
         earliest = stats['earliest']
         if earliest:
@@ -135,11 +108,6 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def classify(self, request):
-        """
-        Send a description, get back LLM-suggested category + priority.
-        Validates input before calling LLM — rejects empty/short descriptions.
-        Returns 503 if LLM is unavailable or returns garbage.
-        """
         serializer = ClassifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

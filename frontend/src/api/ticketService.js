@@ -1,9 +1,5 @@
 const API_BASE = '/api';
 
-/**
- * Fetch all tickets with optional filters.
- * Supports: category, priority, status, search — all combinable.
- */
 export async function fetchTickets(filters = {}) {
     const params = new URLSearchParams();
     if (filters.category) params.append('category', filters.category);
@@ -19,9 +15,6 @@ export async function fetchTickets(filters = {}) {
     return response.json();
 }
 
-/**
- * Create a new ticket. Returns the created ticket on success.
- */
 export async function createTicket(ticketData) {
     const response = await fetch(`${API_BASE}/tickets/`, {
         method: 'POST',
@@ -36,9 +29,6 @@ export async function createTicket(ticketData) {
     return response.json();
 }
 
-/**
- * Update a ticket (e.g., change status, override category/priority).
- */
 export async function updateTicket(id, updateData) {
     const response = await fetch(`${API_BASE}/tickets/${id}/`, {
         method: 'PATCH',
@@ -53,19 +43,12 @@ export async function updateTicket(id, updateData) {
     return response.json();
 }
 
-/**
- * Fetch aggregated ticket statistics.
- */
 export async function fetchStats() {
     const response = await fetch(`${API_BASE}/tickets/stats/`);
     if (!response.ok) throw new Error('Failed to fetch stats');
     return response.json();
 }
 
-/**
- * Classify a ticket description using the LLM.
- * Returns { suggested_category, suggested_priority } or null on failure.
- */
 export async function classifyTicket(description) {
     try {
         const response = await fetch(`${API_BASE}/tickets/classify/`, {
@@ -77,7 +60,6 @@ export async function classifyTicket(description) {
         if (!response.ok) return null;
         return response.json();
     } catch {
-        // Network error — return null, let the user pick manually
         return null;
     }
 }

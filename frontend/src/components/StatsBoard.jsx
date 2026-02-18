@@ -21,7 +21,6 @@ function StatsBoard({ refreshTrigger }) {
 
     return (
         <div className="stats-area">
-            {/* 4 Stat Cards */}
             <div className="stat-row">
                 <StatCard icon="📂" label="Open Tickets:" value={stats.open_tickets} />
                 <StatCard icon="🔄" label="In Progress:" value={stats.in_progress_tickets} />
@@ -29,7 +28,6 @@ function StatsBoard({ refreshTrigger }) {
                 <StatCard icon="📊" label="Avg / Day:" value={stats.avg_tickets_per_day} />
             </div>
 
-            {/* Breakdowns */}
             <div className="breakdown-row">
                 <div className="breakdown-panel">
                     <h3 className="breakdown-panel__title">Priority Breakdown</h3>

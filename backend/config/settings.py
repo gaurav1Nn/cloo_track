@@ -69,10 +69,8 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS — redundant with Nginx proxy but kept as safety net
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Gemini API Key
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
 LANGUAGE_CODE = 'en-us'

@@ -34,14 +34,7 @@ Return ONLY the JSON object, no markdown, no explanation:"""
 
 
 def parse_llm_response(text):
-    """
-    Parse LLM response text to extract JSON.
-    Handles Gemini's tendency to wrap JSON in ```json ... ``` markdown blocks.
-    Validates that category and priority are valid choices.
-    """
     text = text.strip()
-
-    # Extract JSON object — handles cases where Gemini wraps in markdown
     json_match = re.search(r'\{.*\}', text, re.DOTALL)
     if json_match:
         try:
@@ -55,24 +48,16 @@ def parse_llm_response(text):
                     'suggested_priority': priority,
                 }
 
-            logger.warning(
-                f"LLM returned invalid values: category='{category}', priority='{priority}'"
-            )
+            logger.warning(f"Invalid LLM values: category='{category}', priority='{priority}'")
         except json.JSONDecodeError as e:
-            logger.warning(f"Failed to parse LLM JSON response: {e}")
+            logger.warning(f"Failed to parse LLM response: {e}")
 
     return None
 
 
 def classify_ticket(description):
-    """
-    Call Gemini API to classify a support ticket description.
-    Returns dict with suggested_category and suggested_priority, or None on failure.
-    Handles all failure modes gracefully — the ticket system works without LLM.
-    """
     api_key = settings.GEMINI_API_KEY
     if not api_key:
-        logger.info("GEMINI_API_KEY not set — skipping LLM classification")
         return None
 
     try:
@@ -85,12 +70,11 @@ def classify_ticket(description):
         if response and response.text:
             result = parse_llm_response(response.text)
             if result:
-                logger.info(f"LLM classified ticket: {result}")
                 return result
             else:
-                logger.warning(f"LLM returned unparseable response: {response.text[:200]}")
+                logger.warning(f"Unparseable LLM response: {response.text[:200]}")
         else:
-            logger.warning("LLM returned empty response")
+            logger.warning("Empty LLM response")
 
     except Exception as e:
         logger.error(f"LLM classification failed: {type(e).__name__}: {e}")
