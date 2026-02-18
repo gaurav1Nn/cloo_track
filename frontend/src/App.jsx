@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import StatsBoard from './components/StatsBoard'
 import TicketForm from './components/TicketForm'
 import TicketList from './components/TicketList'
 import './App.css'
@@ -6,11 +7,7 @@ import './App.css'
 function App() {
     const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-    const handleTicketCreated = useCallback(() => {
-        setRefreshTrigger((prev) => prev + 1)
-    }, [])
-
-    const handleTicketUpdate = useCallback(() => {
+    const handleDataChange = useCallback(() => {
         setRefreshTrigger((prev) => prev + 1)
     }, [])
 
@@ -22,10 +19,11 @@ function App() {
             </header>
 
             <main className="app-main">
-                <TicketForm onTicketCreated={handleTicketCreated} />
+                <StatsBoard refreshTrigger={refreshTrigger} />
+                <TicketForm onTicketCreated={handleDataChange} />
                 <TicketList
                     refreshTrigger={refreshTrigger}
-                    onTicketUpdate={handleTicketUpdate}
+                    onTicketUpdate={handleDataChange}
                 />
             </main>
         </div>
