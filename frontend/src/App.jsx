@@ -5,100 +5,70 @@ import TicketList from './components/TicketList'
 import './App.css'
 
 function App() {
-    const [refreshTrigger, setRefreshTrigger] = useState(0)
-    const [showModal, setShowModal] = useState(false)
-    const [activeView, setActiveView] = useState('dashboard')
+    const [refresh, setRefresh] = useState(0)
+    const [modal, setModal] = useState(false)
+    const [view, setView] = useState('dashboard')
 
-    const handleDataChange = useCallback(() => {
-        setRefreshTrigger((prev) => prev + 1)
-    }, [])
+    const bump = useCallback(() => setRefresh((n) => n + 1), [])
 
     return (
         <div className="app-layout">
             {/* Sidebar */}
             <aside className="sidebar">
                 <div className="sidebar__logo">
-                    <div className="sidebar__logo-icon">🎫</div>
+                    <span className="sidebar__logo-icon">🎫</span>
                     <span className="sidebar__logo-text">TicketFlow</span>
                 </div>
 
                 <nav className="sidebar__nav">
-                    <button
-                        className={`sidebar__item ${activeView === 'dashboard' ? 'sidebar__item--active' : ''}`}
-                        onClick={() => setActiveView('dashboard')}
-                    >
-                        <span className="sidebar__item-icon">📊</span>
-                        <span>Dashboard</span>
+                    <button className={`sidebar__item ${view === 'dashboard' ? 'sidebar__item--active' : ''}`} onClick={() => setView('dashboard')}>
+                        <span className="sidebar__item-icon">📊</span><span>Dashboard</span>
                     </button>
-                    <button
-                        className={`sidebar__item ${activeView === 'tickets' ? 'sidebar__item--active' : ''}`}
-                        onClick={() => setActiveView('tickets')}
-                    >
-                        <span className="sidebar__item-icon">📋</span>
-                        <span>My Tickets</span>
+                    <button className={`sidebar__item ${view === 'tickets' ? 'sidebar__item--active' : ''}`} onClick={() => setView('tickets')}>
+                        <span className="sidebar__item-icon">📋</span><span>My Tickets</span>
                     </button>
                 </nav>
 
                 <div className="sidebar__divider" />
 
                 <nav className="sidebar__nav">
-                    <button className="sidebar__item" onClick={() => setShowModal(true)}>
-                        <span className="sidebar__item-icon">➕</span>
-                        <span>New Ticket</span>
+                    <button className="sidebar__item" onClick={() => setModal(true)}>
+                        <span className="sidebar__item-icon">➕</span><span>New Ticket</span>
                     </button>
                 </nav>
             </aside>
 
-            {/* Main Content */}
+            {/* Main */}
             <main className="main-content">
-                <div className="main-content__header">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <h1 className="main-content__title">
-                                {activeView === 'dashboard' ? 'Dashboard' : 'All Tickets'}
-                            </h1>
-                            <p className="main-content__subtitle">
-                                {activeView === 'dashboard'
-                                    ? 'Overview of support ticket metrics and activity'
-                                    : 'Browse, filter, and manage all support tickets'}
-                            </p>
-                        </div>
-                        <button
-                            className="ticket-form__submit"
-                            style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem' }}
-                            onClick={() => setShowModal(true)}
-                        >
-                            + Create Ticket
-                        </button>
-                    </div>
+                <div className="page-toolbar">
+                    <h1 className="page-title">
+                        {view === 'dashboard' ? 'Developer Support Dashboard' : 'All Tickets'}
+                    </h1>
+                    <button className="btn-create" onClick={() => setModal(true)}>+ Create Ticket</button>
                 </div>
 
                 <div className="view-section">
-                    {activeView === 'dashboard' && (
+                    {view === 'dashboard' && (
                         <>
-                            <StatsBoard refreshTrigger={refreshTrigger} />
-                            <TicketList refreshTrigger={refreshTrigger} onTicketUpdate={handleDataChange} />
+                            <StatsBoard refreshTrigger={refresh} />
+                            <TicketList refreshTrigger={refresh} onTicketUpdate={bump} />
                         </>
                     )}
-
-                    {activeView === 'tickets' && (
-                        <TicketList refreshTrigger={refreshTrigger} onTicketUpdate={handleDataChange} />
+                    {view === 'tickets' && (
+                        <TicketList refreshTrigger={refresh} onTicketUpdate={bump} />
                     )}
                 </div>
             </main>
 
-            {/* Create Ticket Modal */}
-            {showModal && (
-                <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}>
-                    <div className="modal-content">
-                        <div className="modal-content__header">
-                            <h2 className="modal-content__title">Create New Ticket</h2>
-                            <button className="modal-content__close" onClick={() => setShowModal(false)}>✕</button>
+            {/* Modal */}
+            {modal && (
+                <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModal(false) }}>
+                    <div className="modal-box">
+                        <div className="modal-box__header">
+                            <h2 className="modal-box__title">Create New Ticket</h2>
+                            <button className="modal-box__close" onClick={() => setModal(false)}>✕</button>
                         </div>
-                        <TicketForm
-                            onTicketCreated={handleDataChange}
-                            onClose={() => setShowModal(false)}
-                        />
+                        <TicketForm onTicketCreated={bump} onClose={() => setModal(false)} />
                     </div>
                 </div>
             )}

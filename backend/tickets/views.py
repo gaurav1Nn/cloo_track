@@ -67,6 +67,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         stats = Ticket.objects.aggregate(
             total_tickets=Count('id'),
             open_tickets=Count('id', filter=Q(status='open')),
+            in_progress_tickets=Count('id', filter=Q(status='in_progress')),
+            resolved_tickets=Count('id', filter=Q(status='resolved')),
             earliest=Min('created_at'),
             # Priority breakdown — DB-level aggregation, NO Python loops
             priority_low=Count('id', filter=Q(priority='low')),
@@ -92,6 +94,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Response({
             'total_tickets': total,
             'open_tickets': stats['open_tickets'],
+            'in_progress_tickets': stats['in_progress_tickets'],
+            'resolved_tickets': stats['resolved_tickets'],
             'avg_tickets_per_day': avg_per_day,
             'priority_breakdown': {
                 'low': stats['priority_low'],

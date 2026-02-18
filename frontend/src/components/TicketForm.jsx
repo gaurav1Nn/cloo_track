@@ -10,154 +10,89 @@ function TicketForm({ onTicketCreated, onClose }) {
     const [description, setDescription] = useState('')
     const [category, setCategory] = useState('')
     const [priority, setPriority] = useState('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [isClassifying, setIsClassifying] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
+    const [classifying, setClassifying] = useState(false)
     const [error, setError] = useState(null)
-    const [successMessage, setSuccessMessage] = useState('')
+    const [success, setSuccess] = useState('')
 
-    const userOverrodeCategory = useRef(false)
-    const userOverrodePriority = useRef(false)
+    const overrodeCategory = useRef(false)
+    const overrodePriority = useRef(false)
 
-    const handleDescriptionBlur = async () => {
+    const onDescBlur = async () => {
         if (description.trim().length < 10) return
-        setIsClassifying(true)
+        setClassifying(true)
         try {
-            const result = await classifyTicket(description)
-            if (result) {
-                if (!userOverrodeCategory.current) setCategory(result.suggested_category)
-                if (!userOverrodePriority.current) setPriority(result.suggested_priority)
+            const r = await classifyTicket(description)
+            if (r) {
+                if (!overrodeCategory.current) setCategory(r.suggested_category)
+                if (!overrodePriority.current) setPriority(r.suggested_priority)
             }
-        } catch { /* silent */ }
-        setIsClassifying(false)
+        } catch { }
+        setClassifying(false)
     }
 
-    const handleCategoryChange = (value) => {
-        setCategory(value)
-        userOverrodeCategory.current = true
-    }
-
-    const handlePriorityChange = (value) => {
-        setPriority(value)
-        userOverrodePriority.current = true
-    }
-
-    const handleSubmit = async (e) => {
+    const submit = async (e) => {
         e.preventDefault()
         setError(null)
-        setSuccessMessage('')
-
+        setSuccess('')
         if (!title.trim() || !description.trim() || !category || !priority) {
-            setError('Please fill in all fields.')
+            setError('All fields are required.')
             return
         }
-
-        setIsSubmitting(true)
+        setSubmitting(true)
         try {
             await createTicket({ title, description, category, priority })
-            setTitle('')
-            setDescription('')
-            setCategory('')
-            setPriority('')
-            userOverrodeCategory.current = false
-            userOverrodePriority.current = false
-            setSuccessMessage('Ticket created successfully!')
+            setTitle(''); setDescription(''); setCategory(''); setPriority('')
+            overrodeCategory.current = false; overrodePriority.current = false
+            setSuccess('Ticket created!')
             onTicketCreated()
-            setTimeout(() => {
-                setSuccessMessage('')
-                if (onClose) onClose()
-            }, 1500)
+            setTimeout(() => { setSuccess(''); if (onClose) onClose() }, 1200)
         } catch (err) {
             if (err.data) {
-                const messages = Object.entries(err.data)
-                    .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-                    .join('; ')
-                setError(messages)
-            } else {
-                setError('Something went wrong. Please try again.')
-            }
+                const m = Object.entries(err.data).map(([f, e]) => `${f}: ${Array.isArray(e) ? e.join(', ') : e}`).join('; ')
+                setError(m)
+            } else setError('Something went wrong.')
         }
-        setIsSubmitting(false)
+        setSubmitting(false)
     }
 
     return (
-        <form onSubmit={handleSubmit} className="ticket-form">
-            {error && <div className="ticket-form__alert ticket-form__alert--error">{error}</div>}
-            {successMessage && <div className="ticket-form__alert ticket-form__alert--success">✓ {successMessage}</div>}
+        <form onSubmit={submit} className="tf">
+            {error && <div className="tf__msg tf__msg--err">{error}</div>}
+            {success && <div className="tf__msg tf__msg--ok">✓ {success}</div>}
 
-            <div className="ticket-form__field">
-                <label htmlFor="ticket-title">Title</label>
-                <input
-                    id="ticket-title"
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Brief summary of the issue"
-                    maxLength={200}
-                    required
-                />
-                <span className="ticket-form__hint">{title.length}/200</span>
+            <div className="tf__field">
+                <label>Title</label>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Brief summary" maxLength={200} />
+                <span className="tf__hint">{title.length}/200</span>
             </div>
 
-            <div className="ticket-form__field">
-                <label htmlFor="ticket-description">Description</label>
-                <textarea
-                    id="ticket-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    onBlur={handleDescriptionBlur}
-                    placeholder="Describe your problem in detail..."
-                    rows={4}
-                    required
-                />
-                {isClassifying && (
-                    <div className="ticket-form__classifying">
-                        <span className="ticket-form__spinner" />
-                        AI is analyzing your description...
-                    </div>
-                )}
+            <div className="tf__field">
+                <label>Description</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={onDescBlur} placeholder="Describe your issue..." rows={3} />
+                {classifying && <div className="tf__ai"><span className="tf__dot" />AI analyzing...</div>}
             </div>
 
-            <div className="ticket-form__row">
-                <div className="ticket-form__field">
-                    <label htmlFor="ticket-category">Category</label>
-                    <select
-                        id="ticket-category"
-                        value={category}
-                        onChange={(e) => handleCategoryChange(e.target.value)}
-                        required
-                    >
-                        <option value="">Select category</option>
-                        {CATEGORIES.map((cat) => (
-                            <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
-                        ))}
+            <div className="tf__grid">
+                <div className="tf__field">
+                    <label>Category</label>
+                    <select value={category} onChange={(e) => { setCategory(e.target.value); overrodeCategory.current = true }}>
+                        <option value="">Select</option>
+                        {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                     </select>
                 </div>
-
-                <div className="ticket-form__field">
-                    <label htmlFor="ticket-priority">Priority</label>
-                    <select
-                        id="ticket-priority"
-                        value={priority}
-                        onChange={(e) => handlePriorityChange(e.target.value)}
-                        required
-                    >
-                        <option value="">Select priority</option>
-                        {PRIORITIES.map((pri) => (
-                            <option key={pri} value={pri}>{pri.charAt(0).toUpperCase() + pri.slice(1)}</option>
-                        ))}
+                <div className="tf__field">
+                    <label>Priority</label>
+                    <select value={priority} onChange={(e) => { setPriority(e.target.value); overrodePriority.current = true }}>
+                        <option value="">Select</option>
+                        {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                     </select>
                 </div>
             </div>
 
-            <div className="ticket-form__actions">
-                {onClose && (
-                    <button type="button" onClick={onClose} className="ticket-form__cancel">
-                        Cancel
-                    </button>
-                )}
-                <button type="submit" className="ticket-form__submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Ticket'}
-                </button>
+            <div className="tf__actions">
+                {onClose && <button type="button" onClick={onClose} className="tf__cancel">Cancel</button>}
+                <button type="submit" className="tf__submit" disabled={submitting}>{submitting ? 'Creating...' : 'Create Ticket'}</button>
             </div>
         </form>
     )

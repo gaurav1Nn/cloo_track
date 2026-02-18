@@ -1,82 +1,67 @@
-.filter-bar {
-    padding: 1rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    border-bottom: 1px solid var(--border-light);
+.fb {
+    padding: 12px 22px;
+    border-bottom: 1px solid #f0ebe3;
 }
 
-.filter-bar__search {
-    position: relative;
+.fb__row {
     display: flex;
+    gap: 8px;
     align-items: center;
-}
-
-.filter-bar__search-icon {
-    position: absolute;
-    left: 12px;
-    font-size: 0.9rem;
-    pointer-events: none;
-}
-
-.filter-bar__search-input {
-    width: 100%;
-    padding: 0.6rem 1rem 0.6rem 2.25rem;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    transition: border-color 0.2s ease;
-}
-
-.filter-bar__search-input:focus {
-    border-color: var(--accent-primary);
-}
-
-.filter-bar__search-input::placeholder {
-    color: var(--text-muted);
-}
-
-.filter-bar__filters {
-    display: flex;
-    gap: 0.6rem;
     flex-wrap: wrap;
-    align-items: center;
 }
 
-.filter-bar__select {
-    padding: 0.45rem 0.65rem;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
+.fb__search {
+    flex: 1;
+    min-width: 180px;
+    padding: 7px 12px;
+    background: #faf7f2;
+    border: 1px solid #ddd8d0;
+    border-radius: 6px;
+    color: #333;
     font-size: 0.8rem;
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
+    outline: none;
+}
+
+.fb__search:focus {
+    border-color: #aaa;
+}
+
+.fb__search::placeholder {
+    color: #aaa;
+}
+
+.fb__sel {
+    padding: 7px 10px;
+    background: #faf7f2;
+    border: 1px solid #ddd8d0;
+    border-radius: 6px;
+    color: #555;
+    font-size: 0.78rem;
+    font-family: inherit;
     outline: none;
     cursor: pointer;
-    transition: border-color 0.2s ease;
 }
 
-.filter-bar__select:focus {
-    border-color: var(--accent-primary);
+.fb__sel:focus {
+    border-color: #aaa;
 }
 
-.filter-bar__clear {
-    padding: 0.45rem 0.75rem;
-    background: transparent;
-    border: 1px solid var(--priority-critical);
-    border-radius: var(--radius-sm);
-    color: var(--priority-critical);
-    font-size: 0.8rem;
-    font-family: 'Inter', sans-serif;
+.fb__clear {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #999;
+    font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.filter-bar__clear:hover {
-    background: var(--priority-critical);
-    color: white;
+.fb__clear:hover {
+    background: #f0ebe3;
+    color: #666;
 }

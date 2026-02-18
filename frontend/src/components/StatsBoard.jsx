@@ -4,85 +4,53 @@ import './StatsBoard.css'
 
 function StatsBoard({ refreshTrigger }) {
     const [stats, setStats] = useState(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const loadStats = async () => {
-            setIsLoading(true)
-            try {
-                const data = await fetchStats()
-                setStats(data)
-            } catch {
-                setStats(null)
-            }
-            setIsLoading(false)
-        }
-        loadStats()
+        setLoading(true)
+        fetchStats()
+            .then((data) => setStats(data))
+            .catch(() => setStats(null))
+            .finally(() => setLoading(false))
     }, [refreshTrigger])
 
-    if (isLoading) {
-        return (
-            <div className="stats-loading">
-                <div className="stats-loading__spinner" />
-                <span>Loading statistics...</span>
-            </div>
-        )
-    }
-
+    if (loading) return <div className="stats-placeholder">Loading stats...</div>
     if (!stats) return null
 
     const total = stats.total_tickets || 0
 
     return (
-        <div className="stats-section">
-            {/* Top stat cards */}
-            <div className="stat-cards">
-                <div className="stat-card">
-                    <div className="stat-card__icon stat-card__icon--total">📋</div>
-                    <div className="stat-card__info">
-                        <span className="stat-card__label">Total Tickets</span>
-                        <span className="stat-card__value">{total}</span>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-card__icon stat-card__icon--open">📂</div>
-                    <div className="stat-card__info">
-                        <span className="stat-card__label">Open Tickets</span>
-                        <span className="stat-card__value">{stats.open_tickets}</span>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-card__icon stat-card__icon--resolved">✅</div>
-                    <div className="stat-card__info">
-                        <span className="stat-card__label">Avg / Day</span>
-                        <span className="stat-card__value">{stats.avg_tickets_per_day}</span>
-                    </div>
-                </div>
+        <div className="stats-area">
+            {/* 4 Stat Cards */}
+            <div className="stat-row">
+                <StatCard icon="📂" label="Open Tickets:" value={stats.open_tickets} />
+                <StatCard icon="🔄" label="In Progress:" value={stats.in_progress_tickets} />
+                <StatCard icon="✓" label="Resolved:" value={stats.resolved_tickets} />
+                <StatCard icon="📊" label="Avg / Day:" value={stats.avg_tickets_per_day} />
             </div>
 
             {/* Breakdowns */}
-            <div className="breakdowns-row">
-                {/* Priority Breakdown */}
-                <div className="breakdown-card">
-                    <h3 className="breakdown-card__title">Priority Breakdown</h3>
-                    <div className="breakdown-card__bars">
-                        <BarItem label="Low" value={stats.priority_breakdown.low} total={total} color="var(--priority-low)" />
-                        <BarItem label="Medium" value={stats.priority_breakdown.medium} total={total} color="var(--priority-medium)" />
-                        <BarItem label="High" value={stats.priority_breakdown.high} total={total} color="var(--priority-high)" />
-                        <BarItem label="Critical" value={stats.priority_breakdown.critical} total={total} color="var(--priority-critical)" />
+            <div className="breakdown-row">
+                <div className="breakdown-panel">
+                    <h3 className="breakdown-panel__title">Priority Breakdown</h3>
+                    <div className="breakdown-bars">
+                        <Bar label="Low" value={stats.priority_breakdown.low} total={total} color="#5b9bd5" />
+                        <Bar label="Medium" value={stats.priority_breakdown.medium} total={total} color="#e6b422" />
+                        <Bar label="High" value={stats.priority_breakdown.high} total={total} color="#e07b4b" />
+                        <Bar label="Critical" value={stats.priority_breakdown.critical} total={total} color="#c0392b" />
                     </div>
                 </div>
 
-                {/* Category Breakdown */}
-                <div className="breakdown-card">
-                    <h3 className="breakdown-card__title">Category Breakdown</h3>
-                    <div className="breakdown-card__donut-container">
-                        <DonutChart data={stats.category_breakdown} total={total} />
-                        <div className="breakdown-card__legend">
-                            <LegendItem label="Technical" value={stats.category_breakdown.technical} total={total} color="var(--cat-technical)" />
-                            <LegendItem label="Billing" value={stats.category_breakdown.billing} total={total} color="var(--cat-billing)" />
-                            <LegendItem label="Account" value={stats.category_breakdown.account} total={total} color="var(--cat-account)" />
-                            <LegendItem label="General" value={stats.category_breakdown.general} total={total} color="var(--cat-general)" />
+                <div className="breakdown-panel">
+                    <h3 className="breakdown-panel__title">Category Breakdown</h3>
+                    <div className="donut-area">
+                        <Donut data={stats.category_breakdown} total={total} />
+                        <div className="donut-legend">
+                            <Dot color="#4a8c5c" label="Technical" value={stats.category_breakdown.technical} total={total} />
+                            <Dot color="#2c2c2c" label="Billing" value={stats.category_breakdown.billing} total={total} />
+                            <Dot color="#5b9bd5" label="Account" value={stats.category_breakdown.account} total={total} />
+                            <Dot color="#e6b422" label="Feature Request" value={0} total={total} />
+                            <Dot color="#bbb" label="General" value={stats.category_breakdown.general} total={total} />
                         </div>
                     </div>
                 </div>
@@ -91,70 +59,77 @@ function StatsBoard({ refreshTrigger }) {
     )
 }
 
-function BarItem({ label, value, total, color }) {
-    const pct = total > 0 ? Math.round((value / total) * 100) : 0
+function StatCard({ icon, label, value }) {
     return (
-        <div className="bar-item">
-            <div className="bar-item__header">
-                <span className="bar-item__label">{label}: {pct}%</span>
-                <span className="bar-item__value">{pct}%</span>
-            </div>
-            <div className="bar-item__track">
-                <div className="bar-item__fill" style={{ width: `${pct}%`, backgroundColor: color }} />
+        <div className="stat-card">
+            <div className="stat-card__icon">{icon}</div>
+            <div>
+                <div className="stat-card__label">{label}</div>
+                <div className="stat-card__value">{value}</div>
             </div>
         </div>
     )
 }
 
-function DonutChart({ data, total }) {
+function Bar({ label, value, total, color }) {
+    const pct = total > 0 ? Math.round((value / total) * 100) : 0
+    return (
+        <div className="bar-row">
+            <span className="bar-row__label">{label}: {pct}%</span>
+            <div className="bar-row__track">
+                <div className="bar-row__fill" style={{ width: `${pct}%`, background: color }} />
+            </div>
+            <span className="bar-row__pct">{pct}%</span>
+        </div>
+    )
+}
+
+function Donut({ data, total }) {
+    const colors = ['#4a8c5c', '#2c2c2c', '#5b9bd5', '#e6b422', '#bbb']
+    const values = [data.technical, data.billing, data.account, 0, data.general]
+
     if (total === 0) {
         return (
-            <div className="donut">
-                <svg viewBox="0 0 36 36" className="donut__svg">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e8e0d8" strokeWidth="3" />
+            <div className="donut-chart">
+                <svg viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e0dbd3" strokeWidth="4" />
                 </svg>
-                <span className="donut__center">0</span>
             </div>
         )
     }
 
-    const colors = ['var(--cat-technical)', 'var(--cat-billing)', 'var(--cat-account)', 'var(--cat-general)']
-    const values = [data.technical, data.billing, data.account, data.general]
     let offset = 0
-
     return (
-        <div className="donut">
-            <svg viewBox="0 0 36 36" className="donut__svg">
-                {values.map((val, i) => {
-                    const pct = (val / total) * 100
-                    const dash = `${pct} ${100 - pct}`
-                    const segment = (
+        <div className="donut-chart">
+            <svg viewBox="0 0 36 36">
+                {values.map((v, i) => {
+                    const pct = (v / total) * 100
+                    const el = (
                         <circle
                             key={i}
-                            cx="18" cy="18" r="15.9"
+                            cx="18" cy="18" r="14"
                             fill="none"
                             stroke={colors[i]}
-                            strokeWidth="3.5"
-                            strokeDasharray={dash}
+                            strokeWidth="4"
+                            strokeDasharray={`${pct} ${100 - pct}`}
                             strokeDashoffset={-offset}
-                            strokeLinecap="round"
+                            style={{ transition: 'stroke-dasharray 0.4s' }}
                         />
                     )
                     offset += pct
-                    return segment
+                    return el
                 })}
             </svg>
-            <span className="donut__center">{total}</span>
         </div>
     )
 }
 
-function LegendItem({ label, value, total, color }) {
+function Dot({ color, label, value, total }) {
     const pct = total > 0 ? Math.round((value / total) * 100) : 0
     return (
-        <div className="legend-item">
-            <span className="legend-item__dot" style={{ backgroundColor: color }} />
-            <span className="legend-item__label">{label}: {pct}%</span>
+        <div className="dot-item">
+            <span className="dot-item__dot" style={{ background: color }} />
+            <span className="dot-item__text">{label}: {pct}%</span>
         </div>
     )
 }

@@ -4,89 +4,47 @@ import './FilterBar.css'
 const CATEGORIES = ['billing', 'technical', 'account', 'general']
 const PRIORITIES = ['low', 'medium', 'high', 'critical']
 const STATUSES = ['open', 'in_progress', 'resolved', 'closed']
-
-const STATUS_LABELS = {
-    open: 'Open',
-    in_progress: 'In Progress',
-    resolved: 'Resolved',
-    closed: 'Closed',
-}
+const STATUS_LABELS = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }
 
 function FilterBar({ filters, onFilterChange }) {
-    const [searchInput, setSearchInput] = useState(filters.search || '')
-    const [searchTimeout, setSearchTimeout] = useState(null)
+    const [search, setSearch] = useState(filters.search || '')
+    const [timer, setTimer] = useState(null)
 
-    const handleFilterSelect = (field, value) => {
-        onFilterChange({ ...filters, [field]: value })
+    const pick = (k, v) => onFilterChange({ ...filters, [k]: v })
+
+    const type = (e) => {
+        const v = e.target.value
+        setSearch(v)
+        if (timer) clearTimeout(timer)
+        setTimer(setTimeout(() => onFilterChange({ ...filters, search: v }), 300))
     }
 
-    const handleSearchChange = (e) => {
-        const value = e.target.value
-        setSearchInput(value)
-        if (searchTimeout) clearTimeout(searchTimeout)
-        const timeout = setTimeout(() => {
-            onFilterChange({ ...filters, search: value })
-        }, 300)
-        setSearchTimeout(timeout)
-    }
-
-    const clearFilters = () => {
-        setSearchInput('')
-        onFilterChange({ category: '', priority: '', status: '', search: '' })
-    }
-
-    const hasActiveFilters = filters.category || filters.priority || filters.status || filters.search
+    const clear = () => { setSearch(''); onFilterChange({ category: '', priority: '', status: '', search: '' }) }
+    const active = filters.category || filters.priority || filters.status || filters.search
 
     return (
-        <div className="filter-bar">
-            <div className="filter-bar__search">
-                <span className="filter-bar__search-icon">🔍</span>
+        <div className="fb">
+            <div className="fb__row">
                 <input
                     type="text"
-                    placeholder="Search by title or description..."
-                    value={searchInput}
-                    onChange={handleSearchChange}
-                    className="filter-bar__search-input"
+                    placeholder="Search tickets..."
+                    value={search}
+                    onChange={type}
+                    className="fb__search"
                 />
-            </div>
-
-            <div className="filter-bar__filters">
-                <select
-                    value={filters.category}
-                    onChange={(e) => handleFilterSelect('category', e.target.value)}
-                    className="filter-bar__select"
-                >
+                <select value={filters.category} onChange={(e) => pick('category', e.target.value)} className="fb__sel">
                     <option value="">All Categories</option>
-                    {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
-                    ))}
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                 </select>
-
-                <select
-                    value={filters.priority}
-                    onChange={(e) => handleFilterSelect('priority', e.target.value)}
-                    className="filter-bar__select"
-                >
+                <select value={filters.priority} onChange={(e) => pick('priority', e.target.value)} className="fb__sel">
                     <option value="">All Priorities</option>
-                    {PRIORITIES.map((pri) => (
-                        <option key={pri} value={pri}>{pri.charAt(0).toUpperCase() + pri.slice(1)}</option>
-                    ))}
+                    {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                 </select>
-
-                <select
-                    value={filters.status}
-                    onChange={(e) => handleFilterSelect('status', e.target.value)}
-                    className="filter-bar__select"
-                >
+                <select value={filters.status} onChange={(e) => pick('status', e.target.value)} className="fb__sel">
                     <option value="">All Statuses</option>
-                    {STATUSES.map((s) => (
-                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                    ))}
+                    {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                 </select>
-
-                {hasActiveFilters && (
-                    <button onClick={clearFilters} className="filter-bar__clear">✕ Clear</button>
-                )}
+                {active && <button onClick={clear} className="fb__clear">✕</button>}
             </div>
         </div>
     )
